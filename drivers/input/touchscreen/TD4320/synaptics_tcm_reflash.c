@@ -1984,7 +1984,7 @@ static void reflash_startup_work(struct work_struct *work)
 	timeout = FB_READY_TIMEOUT_S * 1000 / FB_READY_WAIT_MS;
 	/* Bypass fb_ready judge in other boot mode, eg. factory mode */
 	while ((tcm_hcd->fb_ready != FB_READY_COUNT) &&
-				(get_boot_mode == NORMAL_BOOT)) {
+				(get_boot_mode == NORMAL_BOOT || get_boot_mode == RECOVERY_BOOT)) {
 		if (timeout == 0) {
 			LOG_ERR(tcm_hcd->pdev->dev.parent,
 					"Timed out waiting for FB ready: %d\n",

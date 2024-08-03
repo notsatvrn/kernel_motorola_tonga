@@ -881,8 +881,7 @@ static void tpd_down(int x, int y, int p, int id)
 
 #ifdef CONFIG_MTK_BOOT
 	if (tpd_dts_data.use_tpd_button) {
-		if (boot_mode == FACTORY_BOOT ||
-		boot_mode == RECOVERY_BOOT)
+		if (boot_mode == FACTORY_BOOT)
 			tpd_button(x, y, 1);
 	}
 #endif
@@ -896,8 +895,7 @@ static void tpd_up(int x, int y)
 
 #ifdef CONFIG_MTK_BOOT
 	if (tpd_dts_data.use_tpd_button) {
-		if (boot_mode == FACTORY_BOOT ||
-		boot_mode == RECOVERY_BOOT)
+		if (boot_mode == FACTORY_BOOT)
 			tpd_button(x, y, 0);
 	}
 #endif
