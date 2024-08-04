@@ -2705,16 +2705,15 @@ void DSI_CPHY_TIMCONFIG(enum DISP_MODULE_ENUM module, struct cmdqRecStruct *cmdq
 						dfps_params->PLL_CLOCK != 0)
 						_data_rate =
 							dfps_params->data_rate;
-						_PLL_CLOCK =
-							dfps_params->PLL_CLOCK;
+					_PLL_CLOCK =
+						dfps_params->PLL_CLOCK;
 				} else {
 					if (dfps_params->data_rate_dyn != 0 ||
 						dfps_params->PLL_CLOCK_dyn != 0)
-						_data_rate =
-						dfps_params->data_rate_dyn;
-						_PLL_CLOCK =
-						dfps_params->PLL_CLOCK_dyn;
-
+						  _data_rate =
+						    dfps_params->data_rate_dyn;
+					_PLL_CLOCK =
+					  dfps_params->PLL_CLOCK_dyn;
 				}
 			}
 		}
@@ -6325,12 +6324,11 @@ int ddp_dsi_build_cmdq(enum DISP_MODULE_ENUM module,
 	struct DSI_RX_DATA_REG read_data1;
 	struct DSI_RX_DATA_REG read_data2;
 	struct DSI_RX_DATA_REG read_data3;
-	unsigned char packet_type;
-	unsigned char buffer[30];
-	memset((void *)buffer, 0, 30);
-	int recv_data_cnt = 0;
-
 	static cmdqBackupSlotHandle hSlot[4] = {0, 0, 0, 0};
+  int recv_data_cnt = 0;
+  unsigned char packet_type;
+	unsigned char buffer[30];
+  memset((void *)buffer, 0, 30);
 
 	if (module == DISP_MODULE_DSIDUAL)
 		dsi_i = 0;

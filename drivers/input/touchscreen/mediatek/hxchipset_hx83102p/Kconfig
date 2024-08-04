@@ -16,8 +16,7 @@ choice
 	default TOUCHSCREEN_HIMAX_INCELL
 
 config TOUCHSCREEN_HIMAX_ONCELL
-        bool "HIMAX chipset on-cell function"
-	depends on TOUCHSCREEN_HIMAX_COMMON
+  bool "HIMAX chipset on-cell function"
 	help
 	  if you want to use on-cell function, you must set the config.
 	  If unsure, not set it.
@@ -25,8 +24,7 @@ config TOUCHSCREEN_HIMAX_ONCELL
 	  choose the config here to support for the on-cell function.
 
 config TOUCHSCREEN_HIMAX_INCELL
-        bool "HIMAX chipset in-cell function"
-	depends on TOUCHSCREEN_HIMAX_COMMON
+  bool "HIMAX chipset in-cell function"
 	help
 	  if you want to use in-cell function, you must set the config.
 	  If unsure, not set it.

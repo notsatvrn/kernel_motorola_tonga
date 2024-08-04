@@ -991,6 +991,10 @@ static int ged_dvfs_fb_gpu_dvfs(int t_gpu, int t_gpu_target,
 	unsigned long ui32IRQFlags;
 	static int force_fallback_pre;
 
+#ifdef GED_CONFIGURE_LOADING_BASE_DVFS_STEP
+			int i32NewFreqID = 0;
+#endif
+
 #ifdef GED_ENABLE_DYNAMIC_DVFS_MARGIN
 	static int margin_low_bound;
 #endif
@@ -1008,8 +1012,7 @@ static int ged_dvfs_fb_gpu_dvfs(int t_gpu, int t_gpu_target,
 #ifdef GED_CONFIGURE_LOADING_BASE_DVFS_STEP
 		if (force_fallback == 1) {
 			g_lb_down_count = 1;
-			int i32NewFreqID =
-			(int) mt_gpufreq_get_cur_freq_index();
+			i32NewFreqID = (int) mt_gpufreq_get_cur_freq_index();
 
 			if (dvfs_step_mode == 0)
 				i32NewFreqID = 0;
@@ -1020,9 +1023,8 @@ static int ged_dvfs_fb_gpu_dvfs(int t_gpu, int t_gpu_target,
 				i32NewFreqID = 0;
 
 			ged_dvfs_gpu_freq_commit((unsigned long)i32NewFreqID
-			, mt_gpufreq_get_freq_by_idx((unsigned long)
-			i32NewFreqID)
-			, GED_DVFS_DEFAULT_COMMIT);
+        , mt_gpufreq_get_freq_by_idx((unsigned long)i32NewFreqID)
+        , GED_DVFS_DEFAULT_COMMIT);
 		}
 #else
 		if (force_fallback == 1)

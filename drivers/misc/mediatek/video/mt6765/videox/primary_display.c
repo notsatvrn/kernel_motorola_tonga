@@ -4650,13 +4650,6 @@ int primary_display_suspend(void)
 {
 	enum DISP_STATUS ret = DISP_STATUS_OK;
 
-#ifdef MTK_FB_MMDVFS_SUPPORT
-#ifdef CONFIG_MTK_HIGH_FRAME_RATE
-	int active_cfg = 0;
-	unsigned long long bandwidth;
-#endif
-#endif
-
 	DISPCHECK("primary_display_suspend begin\n");
 	mmprofile_log_ex(ddp_mmp_get_events()->primary_suspend,
 		MMPROFILE_FLAG_START, 0, 0);
@@ -6329,10 +6322,6 @@ static int _config_ovl_input(struct disp_frame_cfg_t *cfg,
 	static long long total_ori;
 	static long long total_partial;
 	int j, l_num;
-#ifdef CONFIG_MTK_HIGH_FRAME_RATE
-	unsigned int overlap_num;
-	unsigned int _timing_fps = 6000;/*real vact timing fps * 100*/
-#endif
 #ifdef DEBUG_OVL_CONFIG_TIME
 	cmdqRecBackupRegisterToSlot(cmdq_handle, pgc->ovl_config_time,
 		0, 0x10008028);
@@ -8383,150 +8372,6 @@ struct LCM_DRIVER *DISP_GetLcmDrv(void)
 	return NULL;
 }
 
-static int _screen_cap_by_cmdq(unsigned int mva, enum UNIFIED_COLOR_FMT ufmt,
-			       enum DISP_MODULE_ENUM after_eng)
-{
-	int ret = 0;
-	struct cmdqRecStruct *cmdq_handle = NULL;
-	struct cmdqRecStruct *cmdq_wait_handle = NULL;
-	struct disp_ddp_path_config *pconfig = NULL;
-	unsigned int w_xres = primary_display_get_width();
-	unsigned int h_yres = primary_display_get_height();
-
-	/* create config thread */
-	ret = cmdqRecCreate(CMDQ_SCENARIO_PRIMARY_DISP, &cmdq_handle);
-	if (ret) {
-		DISPCHECK(
-			"primary capture:Fail to create primary cmdq handle for capture\n");
-		ret = -1;
-		goto out;
-	}
-	cmdqRecReset(cmdq_handle);
-
-	/* create wait thread */
-	ret = cmdqRecCreate(CMDQ_SCENARIO_DISP_SCREEN_CAPTURE,
-		&cmdq_wait_handle);
-	if (ret) {
-		DISPCHECK(
-			"primary capture:Fail to create primary cmdq wait handle for capture\n");
-		ret = -1;
-		goto out;
-	}
-	cmdqRecReset(cmdq_wait_handle);
-
-	dpmgr_path_memout_clock(pgc->dpmgr_handle, 1);
-
-	_cmdq_handle_clear_dirty(cmdq_handle);
-	_cmdq_insert_wait_frame_done_token_mira(cmdq_handle);
-
-	_primary_path_lock(__func__);
-
-	primary_display_idlemgr_kick(__func__, 0);
-	dpmgr_path_add_memout(pgc->dpmgr_handle, after_eng, cmdq_handle);
-	cmdqRecClearEventToken(cmdq_handle, CMDQ_EVENT_DISP_WDMA0_EOF);
-
-	pconfig = dpmgr_path_get_last_config(pgc->dpmgr_handle);
-	pconfig->wdma_dirty = 1;
-	pconfig->ovl_dirty = 1;
-	pconfig->dst_dirty = 1;
-	pconfig->rdma_dirty = 1;
-	pconfig->wdma_config.dstAddress = mva;
-	pconfig->wdma_config.srcHeight = h_yres;
-	pconfig->wdma_config.srcWidth = w_xres;
-	pconfig->wdma_config.clipX = 0;
-	pconfig->wdma_config.clipY = 0;
-	pconfig->wdma_config.clipHeight = h_yres;
-	pconfig->wdma_config.clipWidth = w_xres;
-	pconfig->wdma_config.outputFormat = ufmt;
-	pconfig->wdma_config.useSpecifiedAlpha = 1;
-	pconfig->wdma_config.alpha = 0xFF;
-	pconfig->wdma_config.dstPitch = w_xres * UFMT_GET_bpp(ufmt) / 8;
-	ret = dpmgr_path_config(pgc->dpmgr_handle, pconfig, cmdq_handle);
-	pconfig->wdma_dirty = 0;
-
-	_cmdq_set_config_handle_dirty_mira(cmdq_handle);
-	_cmdq_flush_config_handle_mira(cmdq_handle, 0);
-	DISPMSG("primary capture:Flush add memout mva(0x%x)\n", mva);
-	/* wait wdma0 sof */
-	cmdqRecWait(cmdq_wait_handle, CMDQ_EVENT_DISP_WDMA0_SOF);
-	cmdqRecWait(cmdq_wait_handle, CMDQ_EVENT_DISP_WDMA0_EOF);
-	cmdqRecFlush(cmdq_wait_handle);
-	DISPMSG("primary capture:Flush wait wdma sof\n");
-	cmdqRecReset(cmdq_handle);
-	_cmdq_handle_clear_dirty(cmdq_handle);
-	_cmdq_insert_wait_frame_done_token_mira(cmdq_handle);
-
-	dpmgr_path_remove_memout(pgc->dpmgr_handle, cmdq_handle);
-
-	cmdqRecClearEventToken(cmdq_handle, CMDQ_EVENT_DISP_WDMA0_SOF);
-	_cmdq_set_config_handle_dirty_mira(cmdq_handle);
-	/* flush remove memory to cmdq */
-	cmdqRecFlushAsyncCallback(cmdq_handle, _remove_memout_callback, 0);
-	DISPMSG("primary capture: Flush remove memout\n");
-
-	dpmgr_path_memout_clock(pgc->dpmgr_handle, 0);
-	_primary_path_unlock(__func__);
-
-out:
-	cmdqRecDestroy(cmdq_handle);
-	cmdqRecDestroy(cmdq_wait_handle);
-	return 0;
-}
-
-static int _screen_cap_by_cpu(unsigned int mva, enum UNIFIED_COLOR_FMT ufmt,
-	enum DISP_MODULE_ENUM after_eng)
-{
-	int ret = 0;
-	struct disp_ddp_path_config *pconfig = NULL;
-	unsigned int w_xres = primary_display_get_width();
-	unsigned int h_yres = primary_display_get_height();
-
-	dpmgr_path_memout_clock(pgc->dpmgr_handle, 1);
-
-	if (_should_wait_path_idle()) {
-		ret = dpmgr_wait_event_timeout(pgc->dpmgr_handle,
-			DISP_PATH_EVENT_FRAME_DONE, HZ * 1);
-		if (ret <= 0)
-			primary_display_diagnose();
-	}
-
-	_primary_path_lock(__func__);
-	primary_display_idlemgr_kick(__func__, 1);
-
-	dpmgr_path_add_memout(pgc->dpmgr_handle, after_eng, NULL);
-
-	pconfig = dpmgr_path_get_last_config(pgc->dpmgr_handle);
-	pconfig->wdma_dirty = 1;
-	pconfig->wdma_config.dstAddress = mva;
-	pconfig->wdma_config.srcHeight = h_yres;
-	pconfig->wdma_config.srcWidth = w_xres;
-	pconfig->wdma_config.clipX = 0;
-	pconfig->wdma_config.clipY = 0;
-	pconfig->wdma_config.clipHeight = h_yres;
-	pconfig->wdma_config.clipWidth = w_xres;
-	pconfig->wdma_config.outputFormat = ufmt;
-	pconfig->wdma_config.useSpecifiedAlpha = 1;
-	pconfig->wdma_config.alpha = 0xFF;
-	pconfig->wdma_config.dstPitch = w_xres * UFMT_GET_bpp(ufmt) / 8;
-	ret = dpmgr_path_config(pgc->dpmgr_handle, pconfig, NULL);
-	pconfig->wdma_dirty = 0;
-
-	_trigger_display_interface(1, NULL, 0);
-	msleep(20);
-	if (_should_wait_path_idle()) {
-		ret = dpmgr_wait_event_timeout(pgc->dpmgr_handle,
-			DISP_PATH_EVENT_FRAME_DONE, HZ * 1);
-		if (ret <= 0)
-			primary_display_diagnose();
-	}
-
-	dpmgr_path_remove_memout(pgc->dpmgr_handle, NULL);
-
-	dpmgr_path_memout_clock(pgc->dpmgr_handle, 0);
-	_primary_path_unlock(__func__);
-	return 0;
-}
-
 int primary_display_capture_framebuffer(unsigned long pbuf)
 {
 	unsigned int fb_layer_id = primary_display_get_option("FB_LAYER");
@@ -9578,10 +9423,7 @@ int primary_display_get_multi_configs(
 
 	int ret = 0;
 	struct LCM_PARAMS *params;
-	struct LCM_DSI_PARAMS *dsi;
 	struct dfps_info *dfps_info;
-
-	unsigned int tmp_fps_levl = 0;
 
 	unsigned int def_width = 0;
 	unsigned int def_height = 0;

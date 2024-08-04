@@ -38,25 +38,6 @@ static int is_subsys_pwr_on(struct mtk_clk_gate *cg)
 
 	return true;
 }
-static void mtk_cg_set_bit_unused(struct clk_hw *hw)
-{
-	struct mtk_clk_gate *cg = to_mtk_clk_gate(hw);
-	const char *c_n = clk_hw_get_name(hw);
-
-	pr_notice("disable_unused - %s\n", c_n);
-
-	regmap_write(cg->regmap, cg->set_ofs, BIT(cg->bit));
-}
-
-static void mtk_cg_clr_bit_unused(struct clk_hw *hw)
-{
-	struct mtk_clk_gate *cg = to_mtk_clk_gate(hw);
-	const char *c_n = clk_hw_get_name(hw);
-
-	pr_notice("disable_unused - %s\n", c_n);
-
-	regmap_write(cg->regmap, cg->clr_ofs, BIT(cg->bit));
-}
 
 static void mtk_cg_set_bit_no_setclr_unused(struct clk_hw *hw)
 {
@@ -78,32 +59,6 @@ static void mtk_cg_clr_bit_no_setclr_unused(struct clk_hw *hw)
 	pr_notice("disable_unused - %s\n", c_n);
 
 	regmap_update_bits(cg->regmap, cg->sta_ofs, cgbit, 0);
-}
-
-static void mtk_cg_disable_inv_unused(struct clk_hw *hw)
-{
-	struct mtk_clk_gate *cg = to_mtk_clk_gate(hw);
-
-	if (!is_subsys_pwr_on(cg))
-		return;
-
-	if (!clk_hw_is_enabled(clk_hw_get_parent(hw)))
-		return;
-
-	mtk_cg_clr_bit_unused(hw);
-}
-
-static void mtk_cg_disable_unused(struct clk_hw *hw)
-{
-	struct mtk_clk_gate *cg = to_mtk_clk_gate(hw);
-
-	if (!is_subsys_pwr_on(cg))
-		return;
-
-	if (!clk_hw_is_enabled(clk_hw_get_parent(hw)))
-		return;
-
-	mtk_cg_set_bit_unused(hw);
 }
 
 static void mtk_cg_disable_inv_no_setclr_unused(struct clk_hw *hw)
@@ -276,10 +231,6 @@ const struct clk_ops mtk_clk_gate_ops_setclr = {
 	.is_enabled	= mtk_cg_is_enabled,
 	.enable		= mtk_cg_enable,
 	.disable	= mtk_cg_disable,
-#if !defined(CONFIG_MACH_MT6761) && \
-		!defined(CONFIG_MACH_MT6765)
-	.disable_unused = mtk_cg_disable_unused,
-#endif
 };
 EXPORT_SYMBOL(mtk_clk_gate_ops_setclr);
 
@@ -300,10 +251,6 @@ const struct clk_ops mtk_clk_gate_ops_setclr_inv = {
 	.is_enabled	= mtk_en_is_enabled,
 	.enable		= mtk_cg_enable_inv,
 	.disable	= mtk_cg_disable_inv,
-#if !defined(CONFIG_MACH_MT6761) && \
-		!defined(CONFIG_MACH_MT6765)
-	.disable_unused = mtk_cg_disable_inv_unused,
-#endif
 };
 EXPORT_SYMBOL(mtk_clk_gate_ops_setclr_inv);
 

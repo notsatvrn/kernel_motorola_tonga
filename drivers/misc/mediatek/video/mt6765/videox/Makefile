@@ -11,15 +11,7 @@
 # GNU General Public License for more details.
 #
 
-# drivers/video/mtk/Makefile
-#
-
-CMDQ_PLATFORM := $(subst ",,$(CONFIG_MTK_PLATFORM))
-ifeq ($(CONFIG_MTK_PLATFORM), "mt6761")
-	MTK_PLATFORM := mt6765
-else
-	MTK_PLATFORM := $(subst ",,$(CONFIG_MTK_PLATFORM))
-endif
+# drivers/video/videox
 
 obj-$(CONFIG_MTK_FB) += mtkfb_console.o		\
 			disp_assert_layer.o	\
@@ -53,23 +45,23 @@ ccflags-y += -I$(srctree)/drivers/misc/mediatek/video/include/     \
              -I$(srctree)/drivers/misc/mediatek/video/common/rdma20/ \
              -I$(srctree)/drivers/misc/mediatek/video/common/wdma20/ \
              -I$(srctree)/drivers/misc/mediatek/video/common/layering_rule_base/v1.1/ \
-             -I$(srctree)/drivers/misc/mediatek/video/$(MTK_PLATFORM)/dispsys/ \
+             -I$(srctree)/drivers/misc/mediatek/video/mt6765/dispsys/ \
              -I$(srctree)/drivers/misc/mediatek/sync/      \
-             -I$(srctree)/drivers/misc/mediatek/mach/$(MTK_PLATFORM)/include/mach/ \
-             -I$(srctree)/drivers/misc/mediatek/base/power/$(MTK_PLATFORM) \
+             -I$(srctree)/drivers/misc/mediatek/mach/mt6765/include/mach/ \
+             -I$(srctree)/drivers/misc/mediatek/base/power/mt6765 \
              -I$(srctree)/drivers/misc/mediatek/base/power/include \
              -I$(srctree)/drivers/misc/mediatek/base/power/include/spm_v2 \
              -I$(srctree)/drivers/misc/mediatek/smi/ \
-             -I$(srctree)/drivers/misc/mediatek/dramc/$(MTK_PLATFORM) \
+             -I$(srctree)/drivers/misc/mediatek/dramc/mt6765 \
              -I$(srctree)/drivers/misc/mediatek/gpu/ged/include/ \
              -I$(srctree)/drivers/iommu/  \
              -I$(srctree)/drivers/misc/mediatek/mmdvfs \
              -I$(srctree)/drivers/misc/mediatek/leds/	\
-             -I$(srctree)/drivers/misc/mediatek/leds/$(MTK_PLATFORM)	\
+             -I$(srctree)/drivers/misc/mediatek/leds/mt6765	\
              -I$(srctree)/drivers/devfreq	\
              -I$(srctree)/include/linux/soc/mediatek
 
-ifeq ($(CONFIG_MTK_ION), y)
+ifeq ($(CONFIG_MTK_ION),y)
 subdir-ccflags-y += -I$(srctree)/drivers/staging/android/mtk_ion \
                     -I$(srctree)/drivers/staging/android/mtk_ion/mtk
 else
@@ -77,25 +69,18 @@ subdir-ccflags-y += -I$(srctree)/drivers/staging/android/aosp_ion \
                     -I$(srctree)/drivers/staging/android/aosp_ion/mtk
 endif
 
-ifeq ($(CONFIG_MTK_PLATFORM), "mt6761")
-subdir-ccflags-y += -I$(srctree)/drivers/misc/mediatek/m4u/mt6761 \
+subdir-ccflags-y += -I$(srctree)/drivers/misc/mediatek/m4u/mt6765 \
                     -I$(srctree)/drivers/misc/mediatek/m4u/2.0
-else
-subdir-ccflags-y += -I$(srctree)/drivers/misc/mediatek/m4u/$(MTK_PLATFORM) \
-                    -I$(srctree)/drivers/misc/mediatek/m4u/2.0
-endif
 
-subdir-ccflags-y += -I$(srctree)/drivers/misc/mediatek/cmdq/v3/
-
-subdir-ccflags-y += -I$(srctree)/drivers/misc/mediatek/cmdq/v3/$(CMDQ_PLATFORM)/
-
+subdir-ccflags-y += -I$(srctree)/drivers/misc/mediatek/cmdq/v3 \
+                    -I$(srctree)/drivers/misc/mediatek/cmdq/v3/mt6765
 
 subdir-ccflags-y += -I$(srctree)/drivers/misc/mediatek/mmp/
 
 ccflags-y += -I$(srctree)/drivers/misc/mediatek/ext_disp \
 	     -I$(srctree)/drivers/misc/mediatek/ext_disp/v2
 
-ccflags-y += -I$(srctree)/drivers/misc/mediatek/ext_disp/$(MTK_PLATFORM)
+ccflags-y += -I$(srctree)/drivers/misc/mediatek/ext_disp/mt6765
 
 ccflags-$(CONFIG_MTK_LCM) += -I$(srctree)/drivers/misc/mediatek/lcm/inc
 
